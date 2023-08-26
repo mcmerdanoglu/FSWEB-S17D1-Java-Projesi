@@ -1,6 +1,8 @@
 package com.workintech.springboot.springbootfundamentalsrest.controller;
 
 import com.workintech.springboot.springbootfundamentalsrest.entity.Animal;
+import com.workintech.springboot.springbootfundamentalsrest.mapping.AnimalResponse;
+import com.workintech.springboot.springbootfundamentalsrest.validation.AnimalValidation;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,7 +29,7 @@ public class AnimalController {
         animalMap = new HashMap<>();
     }
 
-    //Hard dependency yerine constructor ile de insatance yaratılabilir.
+    //Hard dependency yerine constructor ile de instance yaratılabilir.
     /*
     public AnimalController() {
         animalMap = new HashMap<>();
@@ -45,50 +47,58 @@ public class AnimalController {
     }
 
     @GetMapping("/{id}")
-    public Animal getAnimal(@PathVariable int id){
-        if(id<0){
+    public AnimalResponse getAnimal(@PathVariable int id){
+        if(!AnimalValidation.isIdValid(id)){
          //TODO id is not valid
+            return new AnimalResponse(null, "Id is not valid", 400);
         }
-        if(!animalMap.containsKey(id)){
+        if(!AnimalValidation.isMapContainsKey(animalMap, id)){
             //TODO map does not contain id
+            return new AnimalResponse(null, "Animal does not exist", 400);
         }
-        return animalMap.get(id);
+        // return animalMap.get(id) yerine animalresponse dönerek message ve status bilgileri de dönüşe enjekte edildi.
+        return new AnimalResponse(animalMap.get(id), "Success",200 );
     }
 
     @PostMapping
-    public Animal addAnimal(@RequestBody Animal animal){
-        if(animalMap.containsKey(animal.getId())){
+    public AnimalResponse addAnimal(@RequestBody Animal animal){
+        if(AnimalValidation.isMapContainsKey(animalMap, animal.getId())){
             //TODO item already exists
+            return new AnimalResponse(null, "Animal already exists", 400);
         }
 
-        if(animal.getId()<0 || animal.getName()==null || animal.getName().isEmpty()){
+        if(!AnimalValidation.isAnimalCredentialsValid(animal)){
             //TODO animal credentials not valid
+            return new AnimalResponse(null, "Animal credentials are not valid", 400);
         }
 
         animalMap.put(animal.getId(), animal);
-        return animalMap.get(animal.getId());
+        return new AnimalResponse(animalMap.get(animal.getId()),"Success. Animal has been added", 201);
     }
 
     @PutMapping("/{id}")
-    public Animal updateAnimal(@PathVariable int id, @RequestBody Animal animal){
-        if(!animalMap.containsKey(id)){
+    public AnimalResponse updateAnimal(@PathVariable int id, @RequestBody Animal animal){
+        if(!AnimalValidation.isMapContainsKey(animalMap, animal.getId())){
         // TODO animal is not exist
+            return new AnimalResponse(null, "Animal does not exist", 400);
         }
-        if(animal.getId()<0 || animal.getName()==null || animal.getName().isEmpty()){
+        if(!AnimalValidation.isAnimalCredentialsValid(animal)){
             //TODO animal credentials not valid
+            return new AnimalResponse(null, "Animal credentials are not valid", 400);
         }
         animalMap.put(id, new Animal(id, animal.getName()));
-        return animalMap.get(id);
+        return new AnimalResponse(animalMap.get(id), "Success. Animal has been updated", 200);
     }
 
     @DeleteMapping("/{id}")
-    public Animal deleteAnimal(@PathVariable int id){
-        if(!animalMap.containsKey(id)){
+    public AnimalResponse deleteAnimal(@PathVariable int id){
+        if(!AnimalValidation.isMapContainsKey(animalMap,id)){
             //TODO Animal does not exist
+            return new AnimalResponse(null, "Animal does not exist", 400);
         }
         Animal foundAnimal = animalMap.get(id);
         animalMap.remove(id);
-        return foundAnimal;
+        return new AnimalResponse(foundAnimal, "Success. Animal has been deleted.", 200);
     }
 
 
